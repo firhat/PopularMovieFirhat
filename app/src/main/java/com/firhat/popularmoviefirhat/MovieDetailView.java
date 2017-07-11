@@ -1,5 +1,6 @@
 package com.firhat.popularmoviefirhat;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -40,6 +41,8 @@ public class MovieDetailView extends AppCompatActivity {
 
             Picasso.with(this)
                     .load("http://image.tmdb.org/t/p/w185/"+imgUrl)
+                    .placeholder(R.drawable.placeholder)
+                    .error(R.drawable.placeholder)
                     .into(img);
          }
 

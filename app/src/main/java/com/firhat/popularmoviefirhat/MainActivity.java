@@ -1,6 +1,9 @@
 package com.firhat.popularmoviefirhat;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -12,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 
 import com.firhat.popularmoviefirhat.utilities.NetworkUtils;
@@ -47,7 +51,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         recyclerView.setAdapter(adapter);
 
         URL sortBy = NetworkUtils.buildUrl("popular");
-        new GetMovieDataTask().execute(sortBy);
+        if (isNetworkAvailable()){
+            new GetMovieDataTask().execute(sortBy);
+        }else{
+            Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
+        }
 
     }
 
@@ -75,8 +83,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         @Override
         protected void onPostExecute(String dataResult) {
             mLoadingIndicator.setVisibility(View.INVISIBLE);
-            Log.e("DATA", dataResult);
-
             if (dataResult != null && !dataResult.equals("")) {
                 try {
                     JSONObject jObj = new JSONObject(dataResult);
@@ -94,11 +100,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
                             movieModelList.add(model);
                         } catch (JSONException e) {
-                            Log.e("JSON ERROR", "JSON Parsing error: " + e.getMessage());
+                            //Log.e("JSON ERROR", "JSON Parsing error: " + e.getMessage());
                         }
                     }
                     adapter.notifyDataSetChanged();
-                    Log.e("DATA", String.valueOf(adapter.getItemCount()));
+                    //Log.e("DATA", String.valueOf(adapter.getItemCount()));
                 }catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -149,5 +155,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         startActivity(i);
 
         MainActivity.this.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager manager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+        boolean isAvailable = false;
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // Network is present and connected
+            isAvailable = true;
+        }
+        return isAvailable;
     }
 }
