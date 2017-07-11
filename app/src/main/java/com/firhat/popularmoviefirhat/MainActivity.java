@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
     }
 
-    public class GetMovieDataTask extends AsyncTask<URL, Void, String> {
+    private class GetMovieDataTask extends AsyncTask<URL, Void, String> {
 
         @Override
         protected void onPreExecute() {
@@ -74,7 +74,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
         @Override
         protected void onPostExecute(String dataResult) {
-            // COMPLETED (27) As soon as the loading is complete, hide the loading indicator
             mLoadingIndicator.setVisibility(View.INVISIBLE);
             Log.e("DATA", dataResult);
 

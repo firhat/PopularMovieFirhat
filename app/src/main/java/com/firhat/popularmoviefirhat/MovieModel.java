@@ -1,8 +1,5 @@
 package com.firhat.popularmoviefirhat;
 
-/**
- * Created by Macbook on 7/11/17.
- */
 
 public class MovieModel {
     int id, vote_count, vote_average;
@@ -15,10 +12,6 @@ public class MovieModel {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public void setPoster_path(String poster_path) {
@@ -37,13 +30,7 @@ public class MovieModel {
         return title;
     }
 
-    public void setVote_count(int vote_count) {
-        this.vote_count = vote_count;
-    }
 
-    public int getVote_count() {
-        return vote_count;
-    }
 
     public void setVote_average(int vote_average) {
         this.vote_average = vote_average;

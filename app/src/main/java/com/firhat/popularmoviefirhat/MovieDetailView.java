@@ -1,11 +1,8 @@
 package com.firhat.popularmoviefirhat;
 
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,15 +27,23 @@ public class MovieDetailView extends AppCompatActivity {
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            txtTitle.setText(extras.getString("title"));
-            txtYear.setText(extras.getString("release_date"));
-            txtRating.setText(extras.getString("vote_average"));
-            txtOverview.setText(extras.getString("overview"));
+            String title        = extras.getString("title");
+            String releaseDate  = extras.getString("release_date");
+            String Rating       = extras.getString("vote_average")+"/10";
+            String imgUrl       = extras.getString("poster_path");
+            String overview     = extras.getString("overview");
+
+            txtTitle.setText(title);
+            txtYear.setText(releaseDate != null ? releaseDate.substring(0, 4) : null);
+            txtRating.setText(Rating);
+            txtOverview.setText(overview);
 
             Picasso.with(this)
-                    .load("http://image.tmdb.org/t/p/w185/"+extras.getString("poster_path"))
+                    .load("http://image.tmdb.org/t/p/w185/"+imgUrl)
                     .into(img);
          }
+
+
     }
 
 }
