@@ -2,6 +2,8 @@ package com.firhat.popularmoviefirhat;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -18,6 +20,8 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 
+import com.firhat.popularmoviefirhat.data.FavoriteContract;
+import com.firhat.popularmoviefirhat.data.FavoriteDBHelper;
 import com.firhat.popularmoviefirhat.utilities.NetworkUtils;
 
 import org.json.JSONArray;
@@ -35,12 +39,18 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private List<MovieModel> movieModelList;
     private ProgressBar mLoadingIndicator;
     MovieAdapter adapter;
+    FavoriteAdapter favoriteAdapter;
     RecyclerView recyclerView;
+
+    private SQLiteDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        FavoriteDBHelper dbHelper = new FavoriteDBHelper(this);
+        mDb = dbHelper.getWritableDatabase();
 
         mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
         movieModelList = new ArrayList<>();
@@ -56,6 +66,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         }else{
             Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
         }
+
+        Cursor cursor = getAllFavorite();
+        favoriteAdapter = new FavoriteAdapter(this, cursor);
 
     }
 
@@ -104,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
                         }
                     }
                     adapter.notifyDataSetChanged();
-                    //Log.e("DATA", String.valueOf(adapter.getItemCount()));
+                    Log.e("DATA", String.valueOf(adapter.getItemCount()));
                 }catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -137,6 +150,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             URL sortBy = NetworkUtils.buildUrl("top_rated");
             new GetMovieDataTask().execute(sortBy);
             return true;
+        }else if(itemThatWasClickedId == R.id.action_favorite){
+            recyclerView.setAdapter(favoriteAdapter);
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -146,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         MovieModel movie = movieModelList.get(clickedItemIndex);
         Intent i = new Intent(MainActivity.this, MovieDetailView.class);
         Bundle bundle = new Bundle();
+        bundle.putString("id", String.valueOf(movie.getId()));
         bundle.putString("title", movie.getTitle());
         bundle.putString("overview", movie.getOverview());
         bundle.putString("release_date", movie.getRelease_date());
@@ -167,5 +184,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             isAvailable = true;
         }
         return isAvailable;
+    }
+
+    private Cursor getAllFavorite() {
+        return mDb.query(
+                FavoriteContract.FavoriteEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                FavoriteContract.FavoriteEntry.COLUMN_TIMESTAMP
+        );
     }
 }

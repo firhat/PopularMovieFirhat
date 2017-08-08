@@ -14,6 +14,10 @@ public class MovieModel {
         this.id = id;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public void setPoster_path(String poster_path) {
         this.poster_path = poster_path;
     }

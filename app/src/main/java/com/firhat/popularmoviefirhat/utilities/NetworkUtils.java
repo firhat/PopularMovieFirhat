@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.Scanner;
 
 public class NetworkUtils {
-    final static String API_KEY = "YOUR API KEY HERE";
+    final static String API_KEY = "e076af695021370624df08e938299210";
     final static String BASE_URL ="https://api.themoviedb.org/3/movie/";
     /**
      * Sample request
@@ -19,6 +19,21 @@ public class NetworkUtils {
 
     public static URL buildUrl(String sortBy) {
         Uri builtUri = Uri.parse(BASE_URL+sortBy+"?api_key="+API_KEY+"&language=en-US&page=1")
+                .buildUpon()
+                .build();
+
+        URL url = null;
+        try {
+            url = new URL(builtUri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return url;
+    }
+
+    public static URL buildUrl(String id, String action) {
+        Uri builtUri = Uri.parse(BASE_URL+id+"/"+action+"?api_key="+API_KEY+"&language=en-US")
                 .buildUpon()
                 .build();
 
