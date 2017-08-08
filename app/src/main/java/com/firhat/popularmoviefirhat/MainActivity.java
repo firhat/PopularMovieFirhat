@@ -33,7 +33,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickListener{
+public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickListener,
+        FavoriteAdapter.ListItemClickListener{
 
     final static int numberOfColumn = 2;
     private List<MovieModel> movieModelList;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         }
 
         Cursor cursor = getAllFavorite();
-        favoriteAdapter = new FavoriteAdapter(this, cursor);
+        favoriteAdapter = new FavoriteAdapter(this, cursor, this);
 
     }
 

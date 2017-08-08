@@ -3,7 +3,6 @@ package com.firhat.popularmoviefirhat;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
@@ -49,7 +48,7 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
     RecyclerView recyclerView;
     RecyclerView recyclerViewReviews;
     Button btnFavorite;
-    private String id, title;
+    private String id, title, imgUrl;
     private Boolean isFavorite;
 
     private SQLiteDatabase mDb;
@@ -97,7 +96,7 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
             title        = extras.getString("title");
             String releaseDate  = extras.getString("release_date");
             String Rating       = extras.getString("vote_average")+"/10";
-            String imgUrl       = extras.getString("poster_path");
+            imgUrl               = extras.getString("poster_path");
             String overview     = extras.getString("overview");
 
             txtTitle.setText(title);
@@ -145,7 +144,7 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
 
     public void addToFavorite(View view){
         if(!isFavorite){
-            addNewFavorite(id,title);
+            addNewFavorite(id,title, imgUrl);
             btnFavorite.setText("Remove From Favorite");
         }else{
             deleteFavorite(id);
@@ -154,10 +153,11 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
 
     }
 
-    private long addNewFavorite(String id, String title){
+    private long addNewFavorite(String id, String title, String path){
         ContentValues cv = new ContentValues();
         cv.put(FavoriteContract.FavoriteEntry.COLUMN_ID, id);
         cv.put(FavoriteContract.FavoriteEntry.COLUMN_TITLE, title);
+        cv.put(FavoriteContract.FavoriteEntry.COLUMN_POSTER_PATH, path);
         return mDb.insert(FavoriteContract.FavoriteEntry.TABLE_NAME, null, cv);
     }
 

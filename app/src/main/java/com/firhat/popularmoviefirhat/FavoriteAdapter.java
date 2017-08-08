@@ -2,24 +2,39 @@ package com.firhat.popularmoviefirhat;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v7.widget.RecyclerView;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+
 import com.firhat.popularmoviefirhat.data.FavoriteContract;
+import com.squareup.picasso.Picasso;
 
 
 public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.FavoriteViewHolder> {
 
+    final private FavoriteAdapter.ListItemClickListener mOnClickListener;
+
     private Context mContext;
     private Cursor mCursor;
 
-    public FavoriteAdapter(Context context, Cursor cursor) {
+    public interface ListItemClickListener {
+        void onListItemClick(int clickedItemIndex);
+    }
+
+    public FavoriteAdapter(Context context, Cursor cursor, ListItemClickListener listener) {
         this.mContext = context;
         this.mCursor = cursor;
+        mOnClickListener = listener;
     }
+
+
 
     @Override
     public FavoriteViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -33,9 +48,21 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.Favori
         if (!mCursor.moveToPosition(position))
             return;
 
-        String title = mCursor.getString(mCursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_TITLE));
+        if (isNetworkAvailable()){
+            holder.nameTextView.setVisibility(View.GONE);
+            holder.img.setVisibility(View.VISIBLE);
 
-        holder.nameTextView.setText(title);
+            String path = mCursor.getString(mCursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_POSTER_PATH));
+            Picasso.with(mContext)
+                    .load("http://image.tmdb.org/t/p/w185/"+path)
+                    .into(holder.img);
+        }else{
+            holder.nameTextView.setVisibility(View.VISIBLE);
+            holder.img.setVisibility(View.GONE);
+
+            String title = mCursor.getString(mCursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_TITLE));
+            holder.nameTextView.setText(title);
+        }
 
     }
 
@@ -44,16 +71,36 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.Favori
         return mCursor.getCount();
     }
 
-    class FavoriteViewHolder extends RecyclerView.ViewHolder {
+    class FavoriteViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         TextView nameTextView;
+        ImageView img;
 
 
         public FavoriteViewHolder(View itemView) {
             super(itemView);
             nameTextView = (TextView) itemView.findViewById(R.id.txt_title);
+            img = (ImageView) itemView.findViewById(R.id.img_favorite);
+            itemView.setOnClickListener(this);
 
         }
 
+        @Override
+        public void onClick(View v) {
+            int clickedPosition = getAdapterPosition();
+            mOnClickListener.onListItemClick(clickedPosition);
+        }
+
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager manager = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+        boolean isAvailable = false;
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // Network is present and connected
+            isAvailable = true;
+        }
+        return isAvailable;
     }
 }
