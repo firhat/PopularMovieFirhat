@@ -15,7 +15,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -48,12 +48,10 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
     RecyclerView recyclerView;
     RecyclerView recyclerViewReviews;
     Button btnFavorite;
-    private String id, title, imgUrl;
+    private String id, title, imgUrl, releaseDate, Rating, overview;
     private Boolean isFavorite;
 
     private SQLiteDatabase mDb;
-
-    private final static String LOG_TAG = MovieDetailView.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,10 +92,10 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
         if (extras != null) {
             id           = extras.getString("id");
             title        = extras.getString("title");
-            String releaseDate  = extras.getString("release_date");
-            String Rating       = extras.getString("vote_average")+"/10";
+            releaseDate  = extras.getString("release_date");
+            Rating       = extras.getString("vote_average")+"/10";
             imgUrl               = extras.getString("poster_path");
-            String overview     = extras.getString("overview");
+            overview     = extras.getString("overview");
 
             txtTitle.setText(title);
             txtYear.setText(releaseDate != null ? releaseDate.substring(0, 4) : null);
@@ -145,24 +143,41 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
     public void addToFavorite(View view){
         if(!isFavorite){
             addNewFavorite(id,title, imgUrl);
-            btnFavorite.setText("Remove From Favorite");
         }else{
             deleteFavorite(id);
             btnFavorite.setText("Mark As Favorite");
+            isFavorite = false;
         }
 
     }
 
-    private long addNewFavorite(String id, String title, String path){
+    private void addNewFavorite(String id, String title, String path){
         ContentValues cv = new ContentValues();
         cv.put(FavoriteContract.FavoriteEntry.COLUMN_ID, id);
         cv.put(FavoriteContract.FavoriteEntry.COLUMN_TITLE, title);
         cv.put(FavoriteContract.FavoriteEntry.COLUMN_POSTER_PATH, path);
-        return mDb.insert(FavoriteContract.FavoriteEntry.TABLE_NAME, null, cv);
+        cv.put(FavoriteContract.FavoriteEntry.COLUMN_OVERVIEW, overview);
+        cv.put(FavoriteContract.FavoriteEntry.COLUMN_RELEASE_DATE, releaseDate);
+        cv.put(FavoriteContract.FavoriteEntry.COLUMN_VOTE_AVERAGE, Rating);
+
+        Uri uri = getContentResolver().insert(FavoriteContract.FavoriteEntry.CONTENT_URI, cv);
+        if(uri != null){
+            //Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
+            btnFavorite.setText("Remove From Favorite");
+            isFavorite = true;
+        }
+
+        /**
+         * if you want to use this method, change to long
+         * return mDb.insert(FavoriteContract.FavoriteEntry.TABLE_NAME, null, cv);
+         */
     }
 
-    private String deleteFavorite(String id){
-        return String.valueOf(mDb.delete(FavoriteContract.FavoriteEntry.TABLE_NAME, FavoriteContract.FavoriteEntry.COLUMN_ID + "=" + id, null) > 0);
+    private void deleteFavorite(String id){
+        Uri uri = FavoriteContract.FavoriteEntry.CONTENT_URI;
+        uri = uri.buildUpon().appendPath(id).build();
+        getContentResolver().delete(uri, null, null);
+        //return String.valueOf(mDb.delete(FavoriteContract.FavoriteEntry.TABLE_NAME, FavoriteContract.FavoriteEntry.COLUMN_ID + "=" + id, null) > 0);
     }
 
     private boolean CheckIsDataAlreadyInDBorNot(String TableName, String dbfield,

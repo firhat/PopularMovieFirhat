@@ -25,12 +25,11 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.Favori
     private Cursor mCursor;
 
     public interface ListItemClickListener {
-        void onListItemClick(int clickedItemIndex);
+        void onFavListItemClick(int clickedItemIndex);
     }
 
-    public FavoriteAdapter(Context context, Cursor cursor, ListItemClickListener listener) {
+    public FavoriteAdapter(Context context, ListItemClickListener listener) {
         this.mContext = context;
-        this.mCursor = cursor;
         mOnClickListener = listener;
     }
 
@@ -88,9 +87,24 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.Favori
         @Override
         public void onClick(View v) {
             int clickedPosition = getAdapterPosition();
-            mOnClickListener.onListItemClick(clickedPosition);
+            mOnClickListener.onFavListItemClick(clickedPosition);
         }
 
+    }
+
+    public Cursor swapCursor(Cursor c) {
+        // check if this cursor is the same as the previous cursor (mCursor)
+        if (mCursor == c) {
+            return null; // bc nothing has changed
+        }
+        Cursor temp = mCursor;
+        this.mCursor = c; // new cursor value assigned
+
+        //check if this is a valid cursor, then update the cursor
+        if (c != null) {
+            this.notifyDataSetChanged();
+        }
+        return temp;
     }
 
     private boolean isNetworkAvailable() {

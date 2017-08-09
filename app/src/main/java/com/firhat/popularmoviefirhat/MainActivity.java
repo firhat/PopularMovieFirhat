@@ -7,6 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -34,7 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickListener,
-        FavoriteAdapter.ListItemClickListener{
+        FavoriteAdapter.ListItemClickListener, LoaderManager.LoaderCallbacks<Cursor>{
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int TASK_LOADER_ID = 0;
 
     final static int numberOfColumn = 2;
     private List<MovieModel> movieModelList;
@@ -42,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     MovieAdapter adapter;
     FavoriteAdapter favoriteAdapter;
     RecyclerView recyclerView;
+    Cursor cursor;
 
     private SQLiteDatabase mDb;
 
@@ -68,8 +75,61 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
         }
 
-        Cursor cursor = getAllFavorite();
-        favoriteAdapter = new FavoriteAdapter(this, cursor, this);
+        favoriteAdapter = new FavoriteAdapter(this, this);
+        getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
+        //Cursor cursor = getAllFavorite();
+
+
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new AsyncTaskLoader<Cursor>(this) {
+
+            Cursor mFavData = null;
+
+            @Override
+            protected void onStartLoading(){
+                if(mFavData != null){
+                    deliverResult(mFavData);
+                }else {
+                    forceLoad();
+                }
+
+            }
+
+            @Override
+            public Cursor loadInBackground() {
+                try{
+                    return getContentResolver().query(FavoriteContract.FavoriteEntry.CONTENT_URI,
+                            null,
+                            null,
+                            null,
+                            FavoriteContract.FavoriteEntry.COLUMN_TIMESTAMP);
+                }catch (Exception e){
+                    Log.e(TAG, "Failed to async data");
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            public void deliverResult(Cursor data){
+                mFavData = data;
+                super.deliverResult(data);
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        cursor = data;
+        favoriteAdapter.swapCursor(data);
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        favoriteAdapter.swapCursor(null);
 
     }
 
@@ -173,6 +233,24 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         startActivity(i);
 
         MainActivity.this.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    @Override
+    public void onFavListItemClick(int clickedItemIndex) {
+        Bundle bundle = new Bundle();
+        Intent i = new Intent(MainActivity.this, MovieDetailView.class);
+        bundle.putString("id", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_ID))));
+        bundle.putString("title", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_TITLE))));
+        bundle.putString("overview", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_OVERVIEW))));
+        bundle.putString("release_date", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_RELEASE_DATE))));
+        bundle.putString("vote_average", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_VOTE_AVERAGE))));
+        bundle.putString("poster_path", String.valueOf(cursor.getString(cursor.getColumnIndex(FavoriteContract.FavoriteEntry.COLUMN_POSTER_PATH))));
+        i.putExtras(bundle);
+        startActivity(i);
+
+        MainActivity.this.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
+
     }
 
     private boolean isNetworkAvailable() {
