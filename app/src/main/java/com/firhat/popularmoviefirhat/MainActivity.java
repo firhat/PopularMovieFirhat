@@ -42,10 +42,14 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int TASK_LOADER_ID = 0;
 
+    private static final String SORT_KEY    = "sort";
+    private static String action = "popular";
+
     final static int numberOfColumn = 2;
     private List<MovieModel> movieModelList;
     private ProgressBar mLoadingIndicator;
     MovieAdapter adapter;
+    MovieAdapter topAdapter;
     FavoriteAdapter favoriteAdapter;
     RecyclerView recyclerView;
     Cursor cursor;
@@ -66,18 +70,42 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumn));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         adapter = new MovieAdapter(this, movieModelList, this);
+        topAdapter = new MovieAdapter(this, movieModelList, this);
         recyclerView.setAdapter(adapter);
 
-        URL sortBy = NetworkUtils.buildUrl("popular");
-        if (isNetworkAvailable()){
-            new GetMovieDataTask().execute(sortBy);
-        }else{
-            Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
-        }
+        if (savedInstanceState != null) {
+            String sort = savedInstanceState.getString(SORT_KEY);
+            Log.e("ACTION", action);
+            Log.e("ACTION", sort);
+            if(sort.equalsIgnoreCase("popular")){
+                movieModelList.clear();
+                adapter = new MovieAdapter(this, movieModelList, this);
+                recyclerView.setAdapter(adapter);
+                URL sortBy = NetworkUtils.buildUrl("top_rated");
+                action = "top_rated";
+                new GetMovieDataTask().execute(sortBy);
 
-        favoriteAdapter = new FavoriteAdapter(this, this);
-        getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
-        //Cursor cursor = getAllFavorite();
+            }else if(sort.equalsIgnoreCase("top_rated")){
+                movieModelList.clear();
+                topAdapter = new MovieAdapter(this, movieModelList, this);
+                recyclerView.setAdapter(topAdapter);
+                URL sortBy = NetworkUtils.buildUrl("top_rated");
+                action = "top_rated";
+                new GetMovieDataTask().execute(sortBy);
+
+            }else{
+                recyclerView.setAdapter(favoriteAdapter);
+            }
+        }else {
+            URL sortBy = NetworkUtils.buildUrl("popular");
+            if (isNetworkAvailable()){
+                new GetMovieDataTask().execute(sortBy);
+            }else{
+                Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
+            }
+            favoriteAdapter = new FavoriteAdapter(this, this);
+            getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
+        }
 
 
     }
@@ -173,12 +201,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
                             model.setOverview(movieObj.getString("overview"));
 
                             movieModelList.add(model);
+
                         } catch (JSONException e) {
                             //Log.e("JSON ERROR", "JSON Parsing error: " + e.getMessage());
                         }
                     }
-                    adapter.notifyDataSetChanged();
-                    Log.e("DATA", String.valueOf(adapter.getItemCount()));
+                    if(action.equalsIgnoreCase("popular")){
+                        adapter.notifyDataSetChanged();
+                    }else if(action.equalsIgnoreCase("top_rated")){
+                        topAdapter.notifyDataSetChanged();
+                    }
+                    //Log.e("DATA", String.valueOf(adapter.getItemCount()));
                 }catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -202,17 +235,20 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             adapter = new MovieAdapter(this, movieModelList, this);
             recyclerView.setAdapter(adapter);
             URL sortBy = NetworkUtils.buildUrl("popular");
+            action = "popular";
             new GetMovieDataTask().execute(sortBy);
             return true;
         }else if(itemThatWasClickedId == R.id.action_rated){
             movieModelList.clear();
-            adapter = new MovieAdapter(this, movieModelList, this);
-            recyclerView.setAdapter(adapter);
+            topAdapter = new MovieAdapter(this, movieModelList, this);
+            recyclerView.setAdapter(topAdapter);
             URL sortBy = NetworkUtils.buildUrl("top_rated");
+            action = "top_rated";
             new GetMovieDataTask().execute(sortBy);
             return true;
         }else if(itemThatWasClickedId == R.id.action_favorite){
             recyclerView.setAdapter(favoriteAdapter);
+            action = "fav";
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -265,15 +301,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         return isAvailable;
     }
 
-    private Cursor getAllFavorite() {
-        return mDb.query(
-                FavoriteContract.FavoriteEntry.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                FavoriteContract.FavoriteEntry.COLUMN_TIMESTAMP
-        );
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(SORT_KEY, action);
     }
+
 }
