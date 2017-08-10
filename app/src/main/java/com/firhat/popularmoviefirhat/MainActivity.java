@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -43,18 +44,21 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private static final int TASK_LOADER_ID = 0;
 
     private static final String SORT_KEY    = "sort";
+    private static final String GRID_STATE  = "liststate";
     private static String action = "popular";
 
     final static int numberOfColumn = 2;
-    private List<MovieModel> movieModelList;
-    private ProgressBar mLoadingIndicator;
-    MovieAdapter adapter;
-    MovieAdapter topAdapter;
+    private static List<MovieModel> movieModelList;
+    private static ProgressBar mLoadingIndicator;
+    static MovieAdapter adapter;
+    static MovieAdapter topAdapter;
     FavoriteAdapter favoriteAdapter;
     RecyclerView recyclerView;
     Cursor cursor;
 
     private SQLiteDatabase mDb;
+
+    private Parcelable mRecycleState = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +80,15 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         if (savedInstanceState == null) {
             URL sortBy = NetworkUtils.buildUrl("popular");
             if (isNetworkAvailable()){
-                new GetMovieDataTask().execute(sortBy);
+                new GetMovieDataTask(new GetMovieDataTask.AsynResponse(){
+                    @Override
+                    public void processFinish(Boolean output) {
+                        if(mRecycleState != null){
+                            recyclerView.getLayoutManager().onRestoreInstanceState(mRecycleState);
+                            mRecycleState = null;
+                        }
+                    }
+                }).execute(sortBy);
             }else{
                 Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
             }
@@ -139,7 +151,17 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
     }
 
-    private class GetMovieDataTask extends AsyncTask<URL, Void, String> {
+    static class GetMovieDataTask extends AsyncTask<URL, Void, String> {
+
+        public interface AsynResponse {
+            void processFinish(Boolean output);
+        }
+
+        AsynResponse asynResponse = null;
+
+        public GetMovieDataTask(AsynResponse asynResponse) {
+            this.asynResponse = asynResponse;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -190,8 +212,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
                         topAdapter.notifyDataSetChanged();
                     }
                     //Log.e("DATA", String.valueOf(adapter.getItemCount()));
+                    asynResponse.processFinish(true);
                 }catch (JSONException e) {
                     e.printStackTrace();
+                    asynResponse.processFinish(true);
                 }
             }
 
@@ -214,7 +238,15 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             recyclerView.setAdapter(adapter);
             URL sortBy = NetworkUtils.buildUrl("popular");
             action = "popular";
-            new GetMovieDataTask().execute(sortBy);
+            new GetMovieDataTask(new GetMovieDataTask.AsynResponse(){
+                @Override
+                public void processFinish(Boolean output) {
+                    if(mRecycleState != null){
+                        recyclerView.getLayoutManager().onRestoreInstanceState(mRecycleState);
+                        mRecycleState = null;
+                    }
+                }
+            }).execute(sortBy);
             return true;
         }else if(itemThatWasClickedId == R.id.action_rated){
             movieModelList.clear();
@@ -222,7 +254,15 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             recyclerView.setAdapter(topAdapter);
             URL sortBy = NetworkUtils.buildUrl("top_rated");
             action = "top_rated";
-            new GetMovieDataTask().execute(sortBy);
+            new GetMovieDataTask(new GetMovieDataTask.AsynResponse(){
+                @Override
+                public void processFinish(Boolean output) {
+                    if(mRecycleState != null){
+                        recyclerView.getLayoutManager().onRestoreInstanceState(mRecycleState);
+                        mRecycleState = null;
+                    }
+                }
+            }).execute(sortBy);
             return true;
         }else if(itemThatWasClickedId == R.id.action_favorite){
             recyclerView.setAdapter(favoriteAdapter);
@@ -283,11 +323,15 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(SORT_KEY, action);
+        mRecycleState = recyclerView.getLayoutManager().onSaveInstanceState();
+        outState.putParcelable(GRID_STATE, mRecycleState);
+        //outState.putString(GRID_STATE, String.valueOf(recyclerView.getScrollState()));
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
+        mRecycleState = savedInstanceState.getParcelable(GRID_STATE);
 
         String sort = savedInstanceState.getString(SORT_KEY);
 
@@ -297,19 +341,39 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             recyclerView.setAdapter(adapter);
             URL sortBy = NetworkUtils.buildUrl("popular");
             action = "popular";
-            new GetMovieDataTask().execute(sortBy);
+            new GetMovieDataTask(new GetMovieDataTask.AsynResponse(){
+                @Override
+                public void processFinish(Boolean output) {
+                    if(mRecycleState != null){
+                        recyclerView.getLayoutManager().onRestoreInstanceState(mRecycleState);
+                        mRecycleState = null;
+                    }
+                }
+            }).execute(sortBy);
         }else if(sort.equalsIgnoreCase("top_rated")){
             movieModelList.clear();
             topAdapter = new MovieAdapter(this, movieModelList, this);
             recyclerView.setAdapter(topAdapter);
             URL sortBy = NetworkUtils.buildUrl("top_rated");
             action = "top_rated";
-            new GetMovieDataTask().execute(sortBy);
+            new GetMovieDataTask(new GetMovieDataTask.AsynResponse(){
+                @Override
+                public void processFinish(Boolean output) {
+                    if(mRecycleState != null){
+                        recyclerView.getLayoutManager().onRestoreInstanceState(mRecycleState);
+                        mRecycleState = null;
+                    }
+                }
+            }).execute(sortBy);
         }else{
             favoriteAdapter = new FavoriteAdapter(this, this);
             getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
             recyclerView.setAdapter(favoriteAdapter);
         }
+
+
     }
+
+
 
 }
