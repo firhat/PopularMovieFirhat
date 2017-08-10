@@ -98,7 +98,8 @@ public class MovieDetailView extends AppCompatActivity implements TrailersAdapte
             overview     = extras.getString("overview");
 
             txtTitle.setText(title);
-            txtYear.setText(releaseDate != null ? releaseDate.substring(0, 4) : null);
+            //txtYear.setText(releaseDate != null ? releaseDate.substring(0, 4) : null);
+            txtYear.setText(releaseDate);
             txtRating.setText(Rating);
             txtOverview.setText(overview);
 

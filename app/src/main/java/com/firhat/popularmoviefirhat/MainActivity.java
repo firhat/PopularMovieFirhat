@@ -73,36 +73,14 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         topAdapter = new MovieAdapter(this, movieModelList, this);
         recyclerView.setAdapter(adapter);
 
-        if (savedInstanceState != null) {
-            String sort = savedInstanceState.getString(SORT_KEY);
-            Log.e("ACTION", action);
-            Log.e("ACTION", sort);
-            if(sort.equalsIgnoreCase("popular")){
-                movieModelList.clear();
-                adapter = new MovieAdapter(this, movieModelList, this);
-                recyclerView.setAdapter(adapter);
-                URL sortBy = NetworkUtils.buildUrl("top_rated");
-                action = "top_rated";
-                new GetMovieDataTask().execute(sortBy);
-
-            }else if(sort.equalsIgnoreCase("top_rated")){
-                movieModelList.clear();
-                topAdapter = new MovieAdapter(this, movieModelList, this);
-                recyclerView.setAdapter(topAdapter);
-                URL sortBy = NetworkUtils.buildUrl("top_rated");
-                action = "top_rated";
-                new GetMovieDataTask().execute(sortBy);
-
-            }else{
-                recyclerView.setAdapter(favoriteAdapter);
-            }
-        }else {
+        if (savedInstanceState == null) {
             URL sortBy = NetworkUtils.buildUrl("popular");
             if (isNetworkAvailable()){
                 new GetMovieDataTask().execute(sortBy);
             }else{
                 Toast.makeText(MainActivity.this, "You are not connected to internet", Toast.LENGTH_LONG);
             }
+
             favoriteAdapter = new FavoriteAdapter(this, this);
             getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
         }
@@ -305,6 +283,33 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(SORT_KEY, action);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        String sort = savedInstanceState.getString(SORT_KEY);
+
+        if(sort.equalsIgnoreCase("popular")){
+            movieModelList.clear();
+            adapter = new MovieAdapter(this, movieModelList, this);
+            recyclerView.setAdapter(adapter);
+            URL sortBy = NetworkUtils.buildUrl("popular");
+            action = "popular";
+            new GetMovieDataTask().execute(sortBy);
+        }else if(sort.equalsIgnoreCase("top_rated")){
+            movieModelList.clear();
+            topAdapter = new MovieAdapter(this, movieModelList, this);
+            recyclerView.setAdapter(topAdapter);
+            URL sortBy = NetworkUtils.buildUrl("top_rated");
+            action = "top_rated";
+            new GetMovieDataTask().execute(sortBy);
+        }else{
+            favoriteAdapter = new FavoriteAdapter(this, this);
+            getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
+            recyclerView.setAdapter(favoriteAdapter);
+        }
     }
 
 }
